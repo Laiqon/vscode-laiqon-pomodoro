@@ -41,6 +41,11 @@
         "command": "laiqon-pomodoro-focus.open",
         "title": "Open Pomodoro Timer",
         "category": "Pomodoro"
+      },
+      {
+        "command": "laiqon-pomodoro-focus.close",
+        "title": "Close Pomodoro Timer",
+        "category": "Pomodoro"
       }
     ],
     "configuration": {

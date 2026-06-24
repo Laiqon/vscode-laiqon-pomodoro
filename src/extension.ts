@@ -19,6 +19,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	createStatusBar();
 	registerTimerEvents();
 	registerOpenCommand(context);
+	registerCloseCommand(context);
 }
 
 // ==================== Status Bar ====================
@@ -28,7 +29,11 @@ function createStatusBar(): void {
 		vscode.StatusBarAlignment.Left,
 		100
 	);
-	statusBarItem.text = '🍅 25:00';
+	const state = timer.getState();
+	const minutes = Math.floor(state.remainingSeconds / 60);
+	const seconds = state.remainingSeconds % 60;
+	const label = state.phase === 'focus' ? 'Focus' : 'Break';
+	statusBarItem.text = `${label}: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 	statusBarItem.tooltip = 'Laiqon Pomodoro';
 	statusBarItem.command = 'laiqon-pomodoro-focus.open';
 	statusBarItem.show();
@@ -42,6 +47,15 @@ function registerOpenCommand(context: vscode.ExtensionContext): void {
 	);
 }
 
+function registerCloseCommand(context: vscode.ExtensionContext): void {
+	context.subscriptions.push(
+		vscode.commands.registerCommand('laiqon-pomodoro-focus.close', () => {
+			statusBarItem.hide();
+			currentPanel?.dispose();
+		})
+	);
+}
+
 // ==================== Timer Events ====================
 
 function registerTimerEvents(): void {
@@ -50,12 +64,18 @@ function registerTimerEvents(): void {
 	timer.onSessionComplete(handleSessionComplete);
 }
 
-function handleTick(state: { remainingSeconds: number; phase: Phase }): void {
+function handleTick(state: { remainingSeconds: number; phase: Phase; allComplete?: boolean }): void {
 	const minutes = Math.floor(state.remainingSeconds / 60);
 	const seconds = state.remainingSeconds % 60;
 	const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-	const label = state.phase.charAt(0).toUpperCase() + state.phase.slice(1);
-	statusBarItem.text = `🍅 ${timeStr} ${label}`;
+
+	if (state.allComplete) {
+		statusBarItem.text = 'Session completed!';
+	} else {
+		const label = state.phase === 'focus' ? 'Focus' : 'Break';
+		statusBarItem.text = `${label}: ${timeStr}`;
+	}
+
 	currentPanel?.webview.postMessage({ type: 'timerUpdate', state });
 }
 
