@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MGC Pomodoro</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	min-height: 100vh; overflow: hidden; color: #1d1d1f;
+}
+
+.app {
+	min-height: 100vh; position: relative; display: flex; flex-direction: column;
+	background: linear-gradient(135deg, #f6d5e0 0%, #d6c7ec 35%, #c7d8f0 70%, #e8d5f0 100%);
+	transition: color 0.3s ease;
+}
+
+/* Dark theme adjustments */
+.app.dark { color: #f5f5f7; }
+.app.dark .timer-card { background: rgba(40,40,48,0.55); border-color: rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+.app.dark .timer-display { color: #f5f5f7; }
+.app.dark .session-title-input, .app.dark .devops-input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #f5f5f7; }
+.app.dark .session-title-input::placeholder, .app.dark .devops-input::placeholder { color: rgba(255,255,255,0.4); }
+.app.dark .btn-secondary { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+.app.dark .btn-secondary svg { fill: rgba(255,255,255,0.85); }
+.app.dark .logo { color: rgba(255,255,255,0.7); }
+.app.dark .session-info { color: rgba(255,255,255,0.6); }
+.app.dark .tag-label { color: rgba(255,255,255,0.6); }
+.app.dark .tag.active .tag-label { color: #fff; }
+.app.dark .icon-btn { background: rgba(255,255,255,0.12); }
+.app.dark .icon-btn svg { fill: rgba(255,255,255,0.8); }
+
+.blob { position: absolute; border-radius: 50%; filter: blur(96px); opacity: 0.6; z-index: 0; }
+.blob.b1 { width: 575px; height: 575px; top: -20px; left: -20px; }
+.blob.b2 { width: 575px; height: 575px; bottom: -20px; right: -20px; }
+.blob.b3 { width: 460px; height: 460px; top: 10%; right: calc(33.333% - 230px); }
+.blob.b4 { width: 518px; height: 518px; top: 50%; left: 25%; }
+
+.header { padding: 16px 26px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+.logo { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.55); }
+.header-actions { display: flex; gap: 10px; }
+.icon-btn {
+	width: 38px; height: 38px; border-radius: 50%;
+	background: rgba(255,255,255,0.5); backdrop-filter: blur(10px);
+	border: 1px solid rgba(0,0,0,0.06); cursor: pointer;
+	display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.85); transform: scale(1.05); }
+.icon-btn svg { width: 19px; height: 19px; fill: rgba(0,0,0,0.55); }
+
+.main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 1; }
+
+.timer-card {
+	background: rgba(255,255,255,0.5); backdrop-filter: blur(40px) saturate(180%);
+	-webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 28px;
+	padding: 28px 44px 36px; border: 1px solid rgba(0,0,0,0.08);
+	box-shadow: 0 20px 60px rgba(31,38,135,0.18), inset 0 1px 0 rgba(255,255,255,0.5);
+	text-align: center; width: 100%; max-width: 460px;
+}
+
+.tags { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+.tag {
+	display: flex; align-items: center; gap: 0; cursor: pointer;
+	border: 1px solid rgba(0,0,0,0.1); border-radius: 22px;
+	padding: 9px; background: rgba(255,255,255,0.4); font-family: inherit;
+	transition: all 0.25s cubic-bezier(0.4,0,0.2,1); overflow: hidden;
+}
+.tag svg { width: 20px; height: 20px; flex-shrink: 0; transition: fill 0.2s ease; }
+.tag-text { max-width: 0; opacity: 0; font-size: 13px; font-weight: 600; white-space: nowrap; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+.tag.active { padding: 9px 16px 9px 12px; }
+.tag.active .tag-text { max-width: 80px; opacity: 1; margin-left: 7px; }
+
+.tag.work svg { fill: #ff6b81; }
+.tag.work.active { background: linear-gradient(135deg,#ff7a8a,#ff5e72); border-color: transparent; }
+.tag.study svg { fill: #6c7dff; }
+.tag.study.active { background: linear-gradient(135deg,#7b8cff,#9a6cff); border-color: transparent; }
+.tag.read svg { fill: #f0a830; }
+.tag.read.active { background: linear-gradient(135deg,#ffb144,#ff9416); border-color: transparent; }
+.tag.fitness svg { fill: #34c98a; }
+.tag.fitness.active { background: linear-gradient(135deg,#46d99a,#23bd78); border-color: transparent; }
+.tag.active svg { fill: #fff; }
+.tag.active .tag-text { color: #fff; }
+
+.session-title-input {
+	width: 100%; background: rgba(255,255,255,0.4); border: 1px solid rgba(0,0,0,0.1);
+	border-radius: 14px; padding: 12px 16px; font-size: 16px; font-weight: 500;
+	color: #1d1d1f; text-align: center; outline: none; margin-bottom: 10px; font-family: inherit; transition: all 0.2s ease;
+}
+.session-title-input::placeholder { color: rgba(0,0,0,0.38); }
+.session-title-input:focus { background: rgba(255,255,255,0.7); border-color: rgba(120,120,255,0.5); }
+
+.devops-input {
+	width: 100%; background: rgba(255,255,255,0.4); border: 1px solid rgba(0,0,0,0.1);
+	border-radius: 14px; padding: 10px 16px; font-size: 13px; font-weight: 500;
+	color: #3a3a8a; text-align: center; outline: none; margin-bottom: 22px;
+	font-family: 'SF Mono', ui-monospace, monospace; transition: all 0.2s ease;
+}
+.devops-input::placeholder { color: rgba(0,0,0,0.33); }
+.devops-input:focus { background: rgba(255,255,255,0.7); border-color: rgba(120,120,255,0.5); }
+
+.phase-badge { display: inline-block; padding: 7px 22px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; color: #fff; }
+.phase-badge.focus { background: linear-gradient(135deg,#ff7a8a,#ff5e72); }
+.phase-badge.break { background: linear-gradient(135deg,#5ad1c4,#3ec2b3); }
+
+.timer-display { font-size: 90px; font-weight: 800; letter-spacing: -4px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: #1d1d1f; }
+.timer-display.running { animation: subtlePulse 2s ease-in-out infinite; }
+@keyframes subtlePulse { 0%,100%{opacity:1;} 50%{opacity:0.8;} }
+
+.session-info { font-size: 14px; color: rgba(0,0,0,0.5); margin-bottom: 26px; font-weight: 500; }
+.session-info.complete { color: #34c759; font-weight: 700; }
+
+.controls { display: flex; gap: 16px; justify-content: center; align-items: center; }
+.btn { border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s ease; }
+.btn-secondary { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.btn-secondary:hover { background: rgba(255,255,255,0.9); transform: scale(1.06); }
+.btn-secondary svg { width: 22px; height: 22px; fill: rgba(0,0,0,0.6); }
+.play-btn { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg,#7b8cff,#9a6cff); box-shadow: 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4); }
+.play-btn:hover { transform: scale(1.07); box-shadow: 0 14px 34px rgba(123,140,255,0.6); }
+.play-btn svg { width: 30px; height: 30px; fill: #fff; }
+
+.side-panel {
+	position: fixed; top: 0; right: 0; bottom: 0; width: 360px;
+	background: rgba(255,255,255,0.8); backdrop-filter: blur(40px) saturate(180%);
+	-webkit-backdrop-filter: blur(40px) saturate(180%); border-left: 1px solid rgba(0,0,0,0.08);
+	transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+	z-index: 100; box-shadow: -10px 0 40px rgba(0,0,0,0.12); overflow-y: auto;
+}
+.side-panel.open { transform: translateX(0); }
+.panel-header { padding: 22px 26px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.06); position: sticky; top: 0; background: rgba(255,255,255,0.6); backdrop-filter: blur(20px); z-index: 2; }
+.panel-title { font-size: 19px; font-weight: 700; }
+.close-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.06); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.close-btn:hover { background: rgba(0,0,0,0.12); }
+.close-btn svg { width: 16px; height: 16px; fill: rgba(0,0,0,0.5); }
+.panel-content { padding: 22px 26px; }
+
+.config-section { margin-bottom: 26px; }
+.config-section-title { font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+.config-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.config-row:last-child { border-bottom: none; }
+.config-label { font-size: 15px; color: #1d1d1f; }
+.config-input { width: 72px; height: 34px; border-radius: 9px; border: 1px solid rgba(0,0,0,0.15); text-align: center; font-size: 15px; font-weight: 600; color: #1d1d1f; outline: none; background: rgba(255,255,255,0.85); font-family: inherit; }
+.config-input:focus { border-color: #7b8cff; }
+.toggle { width: 50px; height: 30px; border-radius: 15px; background: rgba(0,0,0,0.15); position: relative; cursor: pointer; transition: background 0.2s ease; }
+.toggle.active { background: linear-gradient(135deg,#7b8cff,#9a6cff); }
+.toggle::after { content: ''; position: absolute; width: 26px; height: 26px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.toggle.active::after { transform: translateX(20px); }
+
+.bg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.bg-option { aspect-ratio: 1; border-radius: 14px; cursor: pointer; border: 3px solid transparent; transition: all 0.2s ease; box-shadow: 0 3px 8px rgba(0,0,0,0.15); position: relative; }
+.bg-option.active { border-color: #7b8cff; transform: scale(1.08); }
+.bg-option:hover { transform: scale(1.08); }
+.bg-aurora { background: linear-gradient(135deg,#f6d5e0,#d6c7ec 40%,#c7d8f0); }
+.bg-peach { background: linear-gradient(135deg,#ffe2cc,#ffd0e0 50%,#ffe9d4); }
+.bg-mint { background: linear-gradient(135deg,#d4f5e9,#cfeef0 50%,#e0f3e8); }
+.bg-midnight { background: linear-gradient(135deg,#1a1a2e,#2d2d52 50%,#1f2940); }
+.bg-charcoal { background: linear-gradient(135deg,#232526,#414345 50%,#2c2c2e); }
+
+.history-empty { text-align: center; color: rgba(0,0,0,0.4); font-size: 14px; padding: 40px 0; }
+.session-card { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; position: relative; }
+.session-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.session-type-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.session-type-dot.Work { background: #ff5e72; }
+.session-type-dot.Study { background: #9a6cff; }
+.session-type-dot.Read { background: #ff9416; }
+.session-type-dot.Fitness { background: #23bd78; }
+.session-card-title { font-size: 15px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-del { background: none; border: none; cursor: pointer; color: rgba(0,0,0,0.3); font-size: 18px; line-height: 1; padding: 0 2px; }
+.session-del:hover { color: #ff5e72; }
+.session-meta { font-size: 12px; color: rgba(0,0,0,0.5); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.session-tasks { font-size: 12px; color: #6c7dff; font-family: 'SF Mono', ui-monospace, monospace; margin-top: 6px; }
+.clear-btn { width: 100%; padding: 10px; margin-top: 8px; border: none; border-radius: 10px; background: rgba(255,94,114,0.12); color: #ff5e72; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+.clear-btn:hover { background: rgba(255,94,114,0.2); }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 50; }
+.overlay.visible { opacity: 1; pointer-events: all; }
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay"></div>
+
+<div class="app" id="app">
+	<div class="blob b1" id="blob1"></div>
+	<div class="blob b2" id="blob2"></div>
+	<div class="blob b3" id="blob3"></div>
+	<div class="blob b4" id="blob4"></div>
+
+	<div class="header">
+		<div class="logo">🍅 Pomodoro</div>
+		<div class="header-actions">
+			<button class="icon-btn" id="historyBtn" title="Session History">
+				<svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.97 8.97 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+			</button>
+			<button class="icon-btn" id="settingsBtn" title="Settings">
+				<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+			</button>
+		</div>
+	</div>
+
+	<div class="main-content">
+		<div class="timer-card">
+			<div class="tags">
+				<button class="tag work active" data-tag="Work" title="Work">
+					<svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+					<span class="tag-text">Work</span>
+				</button>
+				<button class="tag study" data-tag="Study" title="Study">
+					<svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 13L5 12v3.5l7 3.82 7-3.82V12l-7 4z"/></svg>
+					<span class="tag-text">Study</span>
+				</button>
+				<button class="tag read" data-tag="Read" title="Read">
+					<svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 3a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 1 0-5zM7 18v-.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V18H7z"/></svg>
+					<span class="tag-text">Read</span>
+				</button>
+				<button class="tag fitness" data-tag="Fitness" title="Fitness">
+					<svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>
+					<span class="tag-text">Fitness</span>
+				</button>
+			</div>
+
+			<input type="text" class="session-title-input" id="sessionTitle" placeholder="Session title...">
+			<input type="text" class="devops-input" id="devopsTasks" placeholder="Azure DevOps tasks: #123, #345">
+
+			<div class="phase-badge focus" id="phaseBadge">Focus</div>
+			<div class="timer-display" id="timerDisplay">25:00</div>
+			<div class="session-info" id="sessionInfo">Round 1/2</div>
+
+			<div class="controls">
+				<button class="btn btn-secondary" id="resetBtn" title="Reset session">
+					<svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+				</button>
+				<button class="btn play-btn" id="playBtn" title="Start">
+					<svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+				</button>
+				<button class="btn btn-secondary" id="skipBtn" title="Skip">
+					<svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Settings panel -->
+<div class="side-panel" id="configPanel">
+	<div class="panel-header">
+		<div class="panel-title">Settings</div>
+		<button class="close-btn" data-close="configPanel"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+	</div>
+	<div class="panel-content">
+		<div class="config-section">
+			<div class="config-section-title">Round = 1 Focus + 1 Break</div>
+			<div class="config-row"><span class="config-label">Focus (min)</span><input type="number" class="config-input" id="focusDuration" min="1" max="60" value="25"></div>
+			<div class="config-row"><span class="config-label">Break (min)</span><input type="number" class="config-input" id="breakDuration" min="1" max="30" value="5"></div>
+			<div class="config-row"><span class="config-label">Rounds per session</span><input type="number" class="config-input" id="roundsPerSession" min="1" max="12" value="2"></div>
+		</div>
+		<div class="config-section">
+			<div class="config-section-title">Automation</div>
+			<div class="config-row"><span class="config-label">Auto-start breaks</span><div class="toggle active" id="autoStartBreaks"></div></div>
+			<div class="config-row"><span class="config-label">Auto-start focus</span><div class="toggle" id="autoStartFocus"></div></div>
+		</div>
+		<div class="config-section">
+			<div class="config-section-title">Notifications</div>
+			<div class="config-row"><span class="config-label">Sound alerts</span><div class="toggle active" id="enableSounds"></div></div>
+		</div>
+		<div class="config-section">
+			<div class="config-section-title">Background</div>
+			<div class="bg-grid">
+				<div class="bg-option bg-aurora active" data-bg="aurora" title="Aurora"></div>
+				<div class="bg-option bg-peach" data-bg="peach" title="Peach"></div>
+				<div class="bg-option bg-mint" data-bg="mint" title="Mint"></div>
+				<div class="bg-option bg-midnight" data-bg="midnight" title="Midnight"></div>
+				<div class="bg-option bg-charcoal" data-bg="charcoal" title="Charcoal"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- History panel -->
+<div class="side-panel" id="historyPanel">
+	<div class="panel-header">
+		<div class="panel-title">Session History</div>
+		<button class="close-btn" data-close="historyPanel"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+	</div>
+	<div class="panel-content" id="historyContent">
+		<div class="history-empty">No sessions yet.<br>Complete a session to see it here.</div>
+	</div>
+</div>
+
+<script>
+// ============================================================
+// DOM Elements
+// ============================================================
+const $ = (id) => document.getElementById(id);
+const app = $('app');
+const overlay = $('overlay');
+const playIcon = $('playIcon');
+const timerDisplay = $('timerDisplay');
+const phaseBadge = $('phaseBadge');
+const sessionInfo = $('sessionInfo');
+const sessionTitle = $('sessionTitle');
+const devopsTasks = $('devopsTasks');
+
+// ============================================================
+// State
+// ============================================================
+const vscodeApi = acquireVsCodeApi();
+let state = null;
+let config = null;
+let history = [];
+let isPlaying = false;
+
+// Background themes that use light colors
+const lightBackgrounds = ['aurora', 'peach', 'mint'];
+
+// ============================================================
+// Background Configuration
+// ============================================================
+const backgroundGradients = {
+	aurora: 'linear-gradient(135deg, #f6d5e0 0%, #d6c7ec 35%, #c7d8f0 70%, #e8d5f0 100%)',
+	peach: 'linear-gradient(135deg, #ffe2cc 0%, #ffd0e0 50%, #ffe9d4 100%)',
+	mint: 'linear-gradient(135deg, #d4f5e9 0%, #cfeef0 50%, #e0f3e8 100%)',
+	midnight: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d52 50%, #1f2940 100%)',
+	charcoal: 'linear-gradient(135deg, #232526 0%, #414345 50%, #2c2c2e 100%)'
+};
+
+const blobColors = {
+	aurora: ['rgba(244,114,182,0.5)', 'rgba(167,139,250,0.5)', 'rgba(147,197,253,0.5)', 'rgba(250,200,160,0.5)'],
+	peach: ['rgba(255,179,138,0.5)', 'rgba(255,158,199,0.5)', 'rgba(255,210,138,0.5)', 'rgba(255,180,140,0.5)'],
+	mint: ['rgba(143,230,196,0.5)', 'rgba(143,214,230,0.5)', 'rgba(182,240,196,0.5)', 'rgba(160,220,180,0.5)'],
+	midnight: ['rgba(74,74,142,0.5)', 'rgba(106,58,142,0.5)', 'rgba(58,90,142,0.5)', 'rgba(90,80,120,0.5)'],
+	charcoal: ['rgba(90,90,94,0.5)', 'rgba(58,58,62,0.5)', 'rgba(106,106,110,0.5)', 'rgba(80,80,85,0.5)']
+};
+
+// ============================================================
+// Audio - Web Audio API synthesized chimes
+// ============================================================
+let audioContext = null;
+
+function initAudioContext() {
+	if (!audioContext) {
+		try {
+			audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		} catch (e) {
+			return null;
+		}
+	}
+	if (audioContext.state === 'suspended') {
+		audioContext.resume();
+	}
+	return audioContext;
+}
+
+/**
+ * Creates a tone with envelope
+ */
+function createTone(frequency, startTime, duration, gainPeak, type = 'sine') {
+	const ctx = audioContext;
+	const oscillator = ctx.createOscillator();
+	const gainNode = ctx.createGain();
+
+	oscillator.type = type;
+	oscillator.frequency.value = frequency;
+	oscillator.connect(gainNode);
+	gainNode.connect(ctx.destination);
+
+	const actualStart = ctx.currentTime + startTime;
+	gainNode.gain.setValueAtTime(0, actualStart);
+	gainNode.gain.linearRampToValueAtTime(gainPeak, actualStart + 0.015);
+	gainNode.gain.exponentialRampToValueAtTime(0.0001, actualStart + duration);
+
+	oscillator.start(actualStart);
+	oscillator.stop(actualStart + duration + 0.05);
+}
+
+/**
+ * Plays a chime based on the kind of event
+ */
+function playChime(kind) {
+	const ctx = initAudioContext();
+	if (!ctx) return;
+
+	if (kind === 'focus') {
+		// Rising chime - work starting
+		createTone(523.25, 0, 0.8, 0.34);     // C5
+		createTone(659.25, 0.5, 0.8, 0.30);   // E5
+		createTone(783.99, 1.0, 0.8, 0.30);   // G5
+		createTone(1046.5, 1.5, 1.2, 0.34);   // C6
+	} else if (kind === 'break') {
+		// Descending chime - time to relax
+		createTone(880.00, 0, 0.8, 0.40);     // A5
+		createTone(659.25, 0.6, 0.9, 0.36);   // E5
+		createTone(523.25, 1.3, 1.1, 0.34);   // C5
+	} else if (kind === 'session') {
+		// Triumphant arpeggio - session complete
+		createTone(523.25, 0, 0.7, 0.34);     // C5
+		createTone(659.25, 0.4, 0.7, 0.34);   // E5
+		createTone(783.99, 0.8, 0.7, 0.34);   // G5
+		createTone(1046.5, 1.2, 0.7, 0.34);   // C6
+		createTone(1318.5, 1.6, 1.4, 0.38);   // E6
+	}
+}
+
+// Initialize audio on first user interaction (browser autoplay policy)
+document.addEventListener('click', initAudioContext, { once: true });
+
+// ============================================================
+// Event Listeners - Timer Controls
+// ============================================================
+$('playBtn').addEventListener('click', () => {
+	vscodeApi.postMessage({ type: isPlaying ? 'pause' : 'start' });
+});
+
+$('resetBtn').addEventListener('click', () => {
+	vscodeApi.postMessage({ type: 'reset' });
+});
+
+$('skipBtn').addEventListener('click', () => {
+	vscodeApi.postMessage({ type: 'skip' });
+});
+
+// ============================================================
+// Event Listeners - Panel Controls
+// ============================================================
+$('settingsBtn').addEventListener('click', () => openSidePanel('configPanel'));
+
+$('historyBtn').addEventListener('click', () => {
+	vscodeApi.postMessage({ type: 'getHistory' });
+	openSidePanel('historyPanel');
+});
+
+document.querySelectorAll('[data-close]').forEach(btn => {
+	btn.addEventListener('click', closeSidePanels);
+});
+
+overlay.addEventListener('click', closeSidePanels);
+
+function openSidePanel(panelId) {
+	closeSidePanels();
+	$(panelId).classList.add('open');
+	overlay.classList.add('visible');
+}
+
+function closeSidePanels() {
+	document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
+	overlay.classList.remove('visible');
+}
+
+// ============================================================
+// Event Listeners - Session Inputs
+// ============================================================
+sessionTitle.addEventListener('change', e => {
+	vscodeApi.postMessage({ type: 'setTitle', title: e.target.value });
+});
+
+devopsTasks.addEventListener('change', e => {
+	vscodeApi.postMessage({ type: 'setDevOpsTasks', tasks: e.target.value });
+});
+
+// ============================================================
+// Event Listeners - Tag Selection
+// ============================================================
+document.querySelectorAll('.tag').forEach(tag => {
+	tag.addEventListener('click', () => {
+		document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+		tag.classList.add('active');
+		vscodeApi.postMessage({ type: 'setTag', tag: tag.dataset.tag });
+	});
+});
+
+// ============================================================
+// Event Listeners - Settings
+// ============================================================
+['focusDuration', 'breakDuration', 'roundsPerSession'].forEach(id => {
+	$(id).addEventListener('change', e => {
+		vscodeApi.postMessage({ type: 'updateConfig', config: { [id]: parseInt(e.target.value) } });
+	});
+});
+
+$('autoStartBreaks').addEventListener('click', e => {
+	const toggled = e.currentTarget;
+	toggled.classList.toggle('active');
+	vscodeApi.postMessage({
+		type: 'updateConfig',
+		config: { autoStartBreaks: toggled.classList.contains('active') }
+	});
+});
+
+$('autoStartFocus').addEventListener('click', e => {
+	const toggled = e.currentTarget;
+	toggled.classList.toggle('active');
+	vscodeApi.postMessage({
+		type: 'updateConfig',
+		config: { autoStartFocus: toggled.classList.contains('active') }
+	});
+});
+
+$('enableSounds').addEventListener('click', e => {
+	const toggled = e.currentTarget;
+	toggled.classList.toggle('active');
+	const isActive = toggled.classList.contains('active');
+	vscodeApi.postMessage({ type: 'updateConfig', config: { enableSounds: isActive } });
+	if (isActive) playChime('focus');
+});
+
+// ============================================================
+// Event Listeners - Background Selection
+// ============================================================
+document.querySelectorAll('.bg-option').forEach(opt => {
+	opt.addEventListener('click', () => {
+		document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+		opt.classList.add('active');
+		const bg = opt.dataset.bg;
+		applyBackground(bg);
+		vscodeApi.postMessage({ type: 'updateConfig', config: { backgroundImage: bg } });
+	});
+});
+
+// ============================================================
+// Background Management
+// ============================================================
+function applyBackground(bg) {
+	const gradient = backgroundGradients[bg] || backgroundGradients.aurora;
+	const colors = blobColors[bg] || blobColors.aurora;
+
+	app.style.background = gradient;
+	$('blob1').style.background = colors[0];
+	$('blob2').style.background = colors[1];
+	$('blob3').style.background = colors[2];
+	$('blob4').style.background = colors[3];
+
+	// Dark mode for dark backgrounds
+	app.classList.toggle('dark', !lightBackgrounds.includes(bg));
+}
+
+// ============================================================
+// Message Handling from Extension
+// ============================================================
+window.addEventListener('message', (event) => {
+	const message = event.data;
+
+	switch (message.type) {
+		case 'init':
+			state = message.state;
+			config = message.config;
+			history = message.history || [];
+			applyConfig();
+			renderHistory();
+			updateUI();
+			break;
+
+		case 'timerUpdate':
+			state = message.state;
+			updateUI();
+			break;
+
+		case 'phaseChange':
+			setPhaseBadge(message.phase);
+			break;
+
+		case 'configUpdate':
+			config = message.config;
+			applyConfig();
+			break;
+
+		case 'history':
+			history = message.history || [];
+			renderHistory();
+			break;
+
+		case 'playSound':
+			playChime(message.sound);
+			break;
+	}
+});
+
+// ============================================================
+// UI Updates
+// ============================================================
+function setPhaseBadge(phase) {
+	phaseBadge.className = 'phase-badge ' + phase;
+	phaseBadge.textContent = phase === 'focus' ? 'Focus' : 'Break';
+}
+
+function updateUI() {
+	if (!state) return;
+
+	// Timer display
+	const minutes = Math.floor(state.remainingSeconds / 60);
+	const seconds = state.remainingSeconds % 60;
+	timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+	// Play/pause button state
+	isPlaying = state.status === 'running';
+	timerDisplay.classList.toggle('running', isPlaying);
+
+	const playIconPath = isPlaying
+		? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+		: '<path d="M8 5v14l11-7z"/>';
+	playIcon.innerHTML = playIconPath;
+
+	// Phase badge
+	setPhaseBadge(state.phase);
+
+	// Session info
+	if (state.allComplete) {
+		sessionInfo.classList.add('complete');
+		sessionInfo.textContent = '✓ Session complete!';
+	} else {
+		sessionInfo.classList.remove('complete');
+		sessionInfo.textContent = `Round ${state.currentRound}/${state.roundsPerSession}`;
+	}
+
+	// Session title (only if not focused)
+	if (state.sessionTitle !== undefined && document.activeElement !== sessionTitle) {
+		sessionTitle.value = state.sessionTitle;
+	}
+
+	// DevOps tasks (only if not focused)
+	if (state.devOpsTasks !== undefined && document.activeElement !== devopsTasks) {
+		devopsTasks.value = state.devOpsTasks;
+	}
+
+	// Tag selection
+	if (state.sessionTag) {
+		document.querySelectorAll('.tag').forEach(t => {
+			t.classList.toggle('active', t.dataset.tag === state.sessionTag);
+		});
+	}
+}
+
+function applyConfig() {
+	if (!config) return;
+
+	$('focusDuration').value = config.focusDuration ?? 25;
+	$('breakDuration').value = config.breakDuration ?? 5;
+	$('roundsPerSession').value = config.roundsPerSession ?? 2;
+
+	$('autoStartBreaks').classList.toggle('active', config.autoStartBreaks !== false);
+	$('autoStartFocus').classList.toggle('active', config.autoStartFocus === true);
+	$('enableSounds').classList.toggle('active', config.enableSounds !== false);
+
+	// Apply saved background
+	const bg = config.backgroundImage || 'aurora';
+	applyBackground(bg);
+	document.querySelectorAll('.bg-option').forEach(o => {
+		o.classList.toggle('active', o.dataset.bg === bg);
+	});
+}
+
+// ============================================================
+// History Management
+// ============================================================
+function formatDuration(seconds) {
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	return (hours > 0 ? `${hours}h ` : '') + `${minutes}m`;
+}
+
+function formatDate(isoString) {
+	const date = new Date(isoString);
+	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(text) {
+	const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+	return String(text).replace(/[&<>"']/g, char => escapeMap[char]);
+}
+
+function renderHistory() {
+	const container = $('historyContent');
+
+	if (!history.length) {
+		container.innerHTML = '<div class="history-empty">No sessions yet.<br>Complete a session to see it here.</div>';
+		return;
+	}
+
+	let html = '';
+	history.forEach(session => {
+		html += `
+			<div class="session-card">
+				<div class="session-card-head">
+					<span class="session-type-dot ${session.type}"></span>
+					<span class="session-card-title">${escapeHtml(session.title)}</span>
+					<button class="session-del" data-id="${session.id}">&times;</button>
+				</div>
+				<div class="session-meta">
+					<span>${formatDate(session.date)}</span>
+					<span>⏱ ${formatDuration(session.durationSeconds)}</span>
+					<span>${session.type}</span>
+				</div>
+				${session.tasks ? `<div class="session-tasks">${escapeHtml(session.tasks)}</div>` : ''}
+			</div>
+		`;
+	});
+
+	html += '<button class="clear-btn" id="clearHistoryBtn">Clear all history</button>';
+	container.innerHTML = html;
+
+	// Attach event listeners
+	container.querySelectorAll('.session-del').forEach(btn => {
+		btn.addEventListener('click', () => {
+			vscodeApi.postMessage({ type: 'deleteSession', id: btn.dataset.id });
+		});
+	});
+
+	$('clearHistoryBtn').addEventListener('click', () => {
+		vscodeApi.postMessage({ type: 'clearHistory' });
+	});
+}
+</script>
+</body>
+</html>
