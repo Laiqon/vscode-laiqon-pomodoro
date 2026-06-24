@@ -131,7 +131,12 @@ function handleMessage(message: { type: string; [key: string]: unknown }): void 
 		case 'setTitle': timer.setSessionTitle(message.title as string); break;
 		case 'setTag': timer.setSessionTag(message.tag as string); break;
 		case 'setDevOpsTasks': timer.setDevOpsTasks(message.tasks as string); break;
-		case 'updateConfig': storage.updateConfig(message.config as Record<string, unknown>); break;
+		case 'updateConfig': 
+			storage.updateConfig(message.config as Record<string, unknown>);
+			timer.refreshConfig();
+			timer.applyConfigToRunningPhase();
+			handleTick(timer.getState());
+			break;
 		case 'getHistory':
 			currentPanel?.webview.postMessage({ type: 'history', history: storage.getHistory() });
 			break;

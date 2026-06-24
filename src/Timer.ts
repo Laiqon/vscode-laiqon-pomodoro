@@ -247,4 +247,12 @@ export class Timer {
 	refreshConfig(): void {
 		this.config = this.loadConfig();
 	}
+
+	applyConfigToRunningPhase(): void {
+		const newDuration = (this.phase === 'focus' ? this.config.focusDuration : this.config.breakDuration) * 60;
+		this.remainingSeconds = newDuration;
+		if (this.status !== 'running') {
+			this.emitTick();
+		}
+	}
 }
