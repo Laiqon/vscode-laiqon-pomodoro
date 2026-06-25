@@ -84,15 +84,17 @@
         },
         "pomodoro.backgroundImage": {
           "type": "string",
-          "default": "aurora",
+          "default": "transparent",
           "enum": [
-            "aurora",
-            "peach",
-            "mint",
+            "transparent",
+            "winter",
             "midnight",
-            "charcoal"
+            "light",
+            "graphite",
+            "carbon",
+            "amethyst"
           ],
-          "description": "Background theme"
+          "description": "Background theme (from vscode-laiqon-theme)"
         },
         "pomodoro.enableSounds": {
           "type": "boolean",

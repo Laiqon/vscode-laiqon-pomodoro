@@ -12,13 +12,19 @@
 body {
 	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	min-height: 100vh; overflow: hidden; color: #1d1d1f;
+	-webkit-font-smoothing: antialiased;
 }
 
 .app {
-	min-height: 100vh;  position: relative; display: flex; flex-direction: column;
-	background: linear-gradient(135deg, #f6d5e0 0%, #d6c7ec 35%, #c7d8f0 70%, #e8d5f0 100%);
-	transition: color 0.3s ease;
-}
+ 	min-height: 100vh;  position: relative; display: flex; flex-direction: column;
+ 	background: transparent;
+ 	transition: color 0.3s ease;
+ 	image-rendering: -webkit-optimize-contrast;
+ }
+.app:not(.transparent) {
+ 	backdrop-filter: blur(40px) saturate(160%);
+ 	-webkit-backdrop-filter: blur(40px) saturate(160%);
+ }
 
 /* Dark theme adjustments */
 .app.dark { color: #f5f5f7; }
@@ -35,11 +41,30 @@ body {
 .app.dark .icon-btn { background: rgba(255,255,255,0.12); }
 .app.dark .icon-btn svg { fill: rgba(255,255,255,0.8); }
 
-.blob { position: absolute; border-radius: 50%; filter: blur(96px); opacity: 0.6; z-index: 0; }
-.blob.b1 { width: 575px; height: 575px; top: -20px; left: -20px; }
-.blob.b2 { width: 575px; height: 575px; bottom: -20px; right: -20px; }
-.blob.b3 { width: 460px; height: 460px; top: 10%; right: calc(33.333% - 230px); }
-.blob.b4 { width: 518px; height: 518px; top: 50%; left: 25%; }
+/* ============================================================
+   Background Themes (from vscode-laiqon-theme)
+
+   transparent - No background (uses VSCODE editor background)
+   winter      - Deep blue (#011128) with cyan accents (#0D71FD)
+   midnight    - Dark purple (#1C161E) with orange-red (#DC5C30)
+   light       - Off-white (#f9f9f9) with purple (#7A5AF8)
+   graphite    - Dark gray (#1D1D21) with gold (#F7C359)
+   carbon      - Near black (#1A1B1E) with green (#7cb518)
+   amethyst    - Near black (#0D1117) with purple (#7A5AF8)
+   ============================================================ */
+
+.blob { display: none; }
+
+.app::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.app.transparent::after { display: none; }
 
 .header { padding: 16px 26px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
 .logo { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.55); }
@@ -175,15 +200,24 @@ body {
 .toggle::after { content: ''; position: absolute; width: 26px; height: 26px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .toggle.active::after { transform: translateX(20px); }
 
-.bg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.bg-option { aspect-ratio: 1; border-radius: 14px; cursor: pointer; border: 3px solid transparent; transition: all 0.2s ease; box-shadow: 0 3px 8px rgba(0,0,0,0.15); position: relative; }
+.bg-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+.bg-option { aspect-ratio: 1; border-radius: 14px; cursor: pointer; border: 3px solid transparent; transition: all 0.2s ease; box-shadow: 0 3px 8px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
 .bg-option.active { border-color: #7b8cff; transform: scale(1.08); }
 .bg-option:hover { transform: scale(1.08); }
-.bg-aurora { background: linear-gradient(135deg,#f6d5e0,#d6c7ec 40%,#c7d8f0); }
-.bg-peach { background: linear-gradient(135deg,#ffe2cc,#ffd0e0 50%,#ffe9d4); }
-.bg-mint { background: linear-gradient(135deg,#d4f5e9,#cfeef0 50%,#e0f3e8); }
-.bg-midnight { background: linear-gradient(135deg,#1a1a2e,#2d2d52 50%,#1f2940); }
-.bg-charcoal { background: linear-gradient(135deg,#232526,#414345 50%,#2c2c2e); }
+.bg-transparent { background: rgba(128,128,128,0.15); border: 2px dashed rgba(128,128,128,0.4); }
+.bg-transparent::after { content: 'VS'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: rgba(128,128,128,0.5); }
+.bg-winter { background: #011128; }
+.bg-winter::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #0D71FD; box-shadow: 0 0 6px #0D71FD; }
+.bg-midnight { background: #1C161E; }
+.bg-midnight::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #DC5C30; box-shadow: 0 0 6px #DC5C30; }
+.bg-light { background: #f9f9f9; }
+.bg-light::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #7A5AF8; box-shadow: 0 0 6px #7A5AF8; }
+.bg-graphite { background: #1D1D21; }
+.bg-graphite::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #F7C359; box-shadow: 0 0 6px #F7C359; }
+.bg-carbon { background: #1A1B1E; }
+.bg-carbon::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #7cb518; box-shadow: 0 0 6px #7cb518; }
+.bg-amethyst { background: #0D1117; }
+.bg-amethyst::after { content: ''; position: absolute; right: 4px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #7A5AF8; box-shadow: 0 0 6px #7A5AF8; }
 
 .history-empty { text-align: center; color: rgba(0,0,0,0.4); font-size: 14px; padding: 40px 0; }
 .session-card { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; position: relative; }
@@ -231,10 +265,6 @@ body {
 <div class="overlay" id="overlay"></div>
 
 <div class="app" id="app">
-	<div class="blob b1" id="blob1"></div>
-	<div class="blob b2" id="blob2"></div>
-	<div class="blob b3" id="blob3"></div>
-	<div class="blob b4" id="blob4"></div>
 
 	<div class="header">
 		<div class="logo">🍅 Pomodoro</div>
@@ -316,11 +346,13 @@ body {
 		<div class="config-section">
 			<div class="config-section-title">Background</div>
 			<div class="bg-grid">
-				<div class="bg-option bg-aurora active" data-bg="aurora" title="Aurora"></div>
-				<div class="bg-option bg-peach" data-bg="peach" title="Peach"></div>
-				<div class="bg-option bg-mint" data-bg="mint" title="Mint"></div>
+				<div class="bg-option bg-transparent active" data-bg="transparent" title="Transparent"></div>
+				<div class="bg-option bg-winter" data-bg="winter" title="Winter"></div>
 				<div class="bg-option bg-midnight" data-bg="midnight" title="Midnight"></div>
-				<div class="bg-option bg-charcoal" data-bg="charcoal" title="Charcoal"></div>
+				<div class="bg-option bg-light" data-bg="light" title="Light"></div>
+				<div class="bg-option bg-graphite" data-bg="graphite" title="Graphite"></div>
+				<div class="bg-option bg-carbon" data-bg="carbon" title="Carbon"></div>
+				<div class="bg-option bg-amethyst" data-bg="amethyst" title="Amethyst"></div>
 			</div>
 		</div>
 	</div>
@@ -363,26 +395,22 @@ let history = [];
 let isPlaying = false;
 
 // Background themes that use light colors
-const lightBackgrounds = ['aurora', 'peach', 'mint'];
+const lightBackgrounds = ['light'];
 
 // ============================================================
-// Background Configuration
+// Background Configuration (from vscode-laiqon-theme)
 // ============================================================
 const backgroundGradients = {
-	aurora: 'linear-gradient(135deg, #f6d5e0 0%, #d6c7ec 35%, #c7d8f0 70%, #e8d5f0 100%)',
-	peach: 'linear-gradient(135deg, #ffe2cc 0%, #ffd0e0 50%, #ffe9d4 100%)',
-	mint: 'linear-gradient(135deg, #d4f5e9 0%, #cfeef0 50%, #e0f3e8 100%)',
-	midnight: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d52 50%, #1f2940 100%)',
-	charcoal: 'linear-gradient(135deg, #232526 0%, #414345 50%, #2c2c2e 100%)'
+	transparent: '',
+	winter:   'radial-gradient(120% 110% at 12% 8%, rgba(13,113,253,0.22) 0%, rgba(13,113,253,0) 42%), radial-gradient(110% 110% at 88% 85%, rgba(13,113,253,0.14) 0%, rgba(13,113,253,0) 48%), radial-gradient(150% 130% at 50% 0%, #0b2750 0%, #061a36 45%, #010d1f 100%)',
+	midnight: 'radial-gradient(120% 110% at 12% 8%, rgba(220,92,48,0.20) 0%, rgba(220,92,48,0) 42%), radial-gradient(110% 110% at 88% 85%, rgba(147,112,219,0.13) 0%, rgba(147,112,219,0) 48%), radial-gradient(150% 130% at 50% 0%, #2a2230 0%, #1c161e 45%, #120e14 100%)',
+	light:    'radial-gradient(120% 110% at 12% 8%, rgba(122,90,248,0.18) 0%, rgba(122,90,248,0) 42%), radial-gradient(110% 110% at 88% 85%, rgba(176,196,222,0.20) 0%, rgba(176,196,222,0) 48%), radial-gradient(150% 130% at 50% 0%, #ffffff 0%, #f4f4f7 45%, #ececf2 100%)',
+	graphite: 'radial-gradient(120% 110% at 12% 8%, rgba(247,195,89,0.16) 0%, rgba(247,195,89,0) 42%), radial-gradient(110% 110% at 88% 85%, rgba(192,192,192,0.10) 0%, rgba(192,192,192,0) 48%), radial-gradient(150% 130% at 50% 0%, #2a2a30 0%, #1d1d21 45%, #131316 100%)',
+	carbon:   'radial-gradient(120% 110% at 12% 8%, rgba(124,181,24,0.18) 0%, rgba(124,181,24,0) 42%), radial-gradient(110% 110% at 88% 85%, rgba(144,238,144,0.10) 0%, rgba(144,238,144,0) 48%), radial-gradient(150% 130% at 50% 0%, #26282a 0%, #1a1b1e 45%, #111214 100%)',
+	amethyst: 'radial-gradient(120% 110% at 15% 10%, rgba(122,90,248,0.22) 0%, rgba(122,90,248,0) 42%), radial-gradient(110% 110% at 85% 88%, rgba(122,90,248,0.13) 0%, rgba(122,90,248,0) 48%), radial-gradient(150% 130% at 50% 0%, #1a1730 0%, #11101d 45%, #0a0a12 100%)'
 };
 
-const blobColors = {
-	aurora: ['rgba(244,114,182,0.5)', 'rgba(167,139,250,0.5)', 'rgba(147,197,253,0.5)', 'rgba(250,200,160,0.5)'],
-	peach: ['rgba(255,179,138,0.5)', 'rgba(255,158,199,0.5)', 'rgba(255,210,138,0.5)', 'rgba(255,180,140,0.5)'],
-	mint: ['rgba(143,230,196,0.5)', 'rgba(143,214,230,0.5)', 'rgba(182,240,196,0.5)', 'rgba(160,220,180,0.5)'],
-	midnight: ['rgba(74,74,142,0.5)', 'rgba(106,58,142,0.5)', 'rgba(58,90,142,0.5)', 'rgba(90,80,120,0.5)'],
-	charcoal: ['rgba(90,90,94,0.5)', 'rgba(58,58,62,0.5)', 'rgba(106,106,110,0.5)', 'rgba(80,80,85,0.5)']
-};
+
 
 // ============================================================
 // Audio - Web Audio API synthesized chimes
@@ -581,17 +609,15 @@ document.querySelectorAll('.bg-option').forEach(opt => {
 // Background Management
 // ============================================================
 function applyBackground(bg) {
-	const gradient = backgroundGradients[bg] || backgroundGradients.aurora;
-	const colors = blobColors[bg] || blobColors.aurora;
+	const gradient = backgroundGradients[bg] || backgroundGradients.transparent;
 
 	app.style.background = gradient;
-	$('blob1').style.background = colors[0];
-	$('blob2').style.background = colors[1];
-	$('blob3').style.background = colors[2];
-	$('blob4').style.background = colors[3];
 
-	// Dark mode for dark backgrounds
-	app.classList.toggle('dark', !lightBackgrounds.includes(bg));
+	app.classList.toggle('transparent', bg === 'transparent');
+
+	// Dark mode for dark backgrounds (all except light theme)
+	const isDark = !lightBackgrounds.includes(bg);
+	app.classList.toggle('dark', isDark);
 }
 
 // ============================================================
@@ -717,7 +743,7 @@ function applyConfig() {
 	$('enableSounds').classList.toggle('active', config.enableSounds !== false);
 
 	// Apply saved background
-	const bg = config.backgroundImage || 'aurora';
+	const bg = config.backgroundImage || 'transparent';
 	applyBackground(bg);
 	document.querySelectorAll('.bg-option').forEach(o => {
 		o.classList.toggle('active', o.dataset.bg === bg);

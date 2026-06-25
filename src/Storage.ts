@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: PomodoroConfig = {
 	roundsPerSession: 2,
 	autoStartBreaks: true,
 	autoStartFocus: false,
-	backgroundImage: 'aurora',
+	backgroundImage: 'transparent',
 	enableSounds: true
 };
 
