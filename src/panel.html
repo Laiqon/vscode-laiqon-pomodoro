@@ -15,7 +15,7 @@ body {
 }
 
 .app {
-	min-height: 100vh; position: relative; display: flex; flex-direction: column;
+	min-height: 100vh;  position: relative; display: flex; flex-direction: column;
 	background: linear-gradient(135deg, #f6d5e0 0%, #d6c7ec 35%, #c7d8f0 70%, #e8d5f0 100%);
 	transition: color 0.3s ease;
 }
@@ -58,9 +58,9 @@ body {
 .timer-card {
 	background: rgba(255,255,255,0.5); backdrop-filter: blur(40px) saturate(180%);
 	-webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 28px;
-	padding: 31px 48px 40px; border: 1px solid rgba(0,0,0,0.08);
+	padding: 33px 50px 42px; border: 1px solid rgba(0,0,0,0.08);
 	box-shadow: 0 20px 60px rgba(31,38,135,0.18), inset 0 1px 0 rgba(255,255,255,0.5);
-	text-align: center; width: 100%; max-width: 506px;
+	text-align: center; width: 100%; max-width: 532px;
 }
 
 .tags { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
@@ -103,17 +103,36 @@ body {
 .devops-input::placeholder { color: rgba(0,0,0,0.33); }
 .devops-input:focus { background: rgba(255,255,255,0.7); border-color: rgba(120,120,255,0.5); }
 
+.title-label {
+	display: none;
+	font-size: 14px;
+	color: rgba(0,0,0,0.5);
+	text-align: center;
+	margin-bottom: 10px;
+	min-height: 20px;
+}
+
+.timer-card.timer-running .tags,
+.timer-card.timer-running .session-title-input {
+	display: none;
+}
+.timer-card.timer-running .title-label {
+	display: block;
+}
+
 .phase-badge { display: inline-block; padding: 7px 22px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; color: #fff; }
 .phase-badge.focus { background: linear-gradient(135deg,#ff7a8a,#ff5e72); }
 .phase-badge.break { background: linear-gradient(135deg,#5ad1c4,#3ec2b3); }
 
-.timer-display { font-size: 90px; font-weight: 800; letter-spacing: -4px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: #1d1d1f; }
+.timer-display { font-size: 92px; font-weight: 800; letter-spacing: -4px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: #1d1d1f; }
 .timer-display.running { animation: subtlePulse 2s ease-in-out infinite; }
 @keyframes subtlePulse { 0%,100%{opacity:1;} 50%{opacity:0.8;} }
 @keyframes borderRing { 0%,100%{box-shadow: 0 0 0 0 rgba(123,140,255,0.7), 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4);} 50%{box-shadow: 0 0 0 8px rgba(123,140,255,0), 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4);} }
 
 .session-info { font-size: 14px; color: rgba(0,0,0,0.5); margin-bottom: 26px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .session-info .phase-text { display: none; font-weight: 700; }
+.session-info .phase-tag { font-weight: 700; }
+.session-info .phase-tag.break { color: #4ade80; }
 .session-info .phase-text.focus { color: #ff5e72; }
 .session-info .phase-text.break { color: #3ec2b3; }
 .session-info.running .phase-text { display: inline; }
@@ -184,6 +203,28 @@ body {
 
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 50; }
 .overlay.visible { opacity: 1; pointer-events: all; }
+
+@media (max-width: 400px) {
+	.app { min-width: 10vw; }
+	.timer-card { padding: 15px; border-radius: 20px; }
+	.timer-display { font-size: 46px; letter-spacing: -2px; }
+	.session-info { font-size: 12px; margin-bottom: 18px; }
+	.controls { gap: 12px; }
+	.btn-secondary { width: 34px; height: 34px; }
+	.btn-secondary svg { width: 16px; height: 16px; }
+	.play-btn { width: 50px; height: 50px; }
+	.play-btn svg { width: 20px; height: 20px; }
+	.tags { gap: 7px; margin-bottom: 16px; }
+	.tag { padding: 7px; border-radius: 18px; }
+	.tag svg { width: 16px; height: 16px; }
+	.tag.active { padding: 7px 12px 7px 10px; }
+	.tag-text { font-size: 11px; }
+	.tag.active .tag-text { max-width: 60px; }
+	.session-title-input { padding: 9px 12px; font-size: 13px; border-radius: 11px; margin-bottom: 8px; }
+	.devops-input { padding: 8px 12px; font-size: 11px; border-radius: 11px; margin-bottom: 16px; }
+	.title-label { font-size: 12px; margin-bottom: 8px; }
+	.phase-badge { padding: 5px 16px; border-radius: 16px; font-size: 10px; margin-bottom: 12px; }
+}
 </style>
 </head>
 <body>
@@ -208,7 +249,7 @@ body {
 	</div>
 
 	<div class="main-content">
-		<div class="timer-card">
+		<div class="timer-card" id="timerCard">
 			<div class="tags">
 				<button class="tag work active" data-tag="Work" title="Work">
 					<svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
@@ -229,10 +270,11 @@ body {
 			</div>
 
 			<input type="text" class="session-title-input" id="sessionTitle" placeholder="Session title...">
+			<div class="title-label" id="titleLabel"></div>
 			<input type="text" class="devops-input" id="devopsTasks" placeholder="Azure DevOps tasks: #123, #345">
 
 			<div class="timer-display" id="timerDisplay">25:00</div>
-			<div class="session-info" id="sessionInfo">Round 1/2</div>
+			<div class="session-info" id="sessionInfo">Rounds 1/2</div>
 
 			<div class="controls">
 				<button class="btn btn-secondary" id="resetBtn" title="Reset session">
@@ -308,6 +350,8 @@ const phaseBadge = $('phaseBadge');
 const sessionInfo = $('sessionInfo');
 const sessionTitle = $('sessionTitle');
 const devopsTasks = $('devopsTasks');
+const titleLabel = $('titleLabel');
+const timerCard = $('timerCard');
 
 // ============================================================
 // State
@@ -613,6 +657,18 @@ function updateUI() {
 		: '<path d="M8 5v14l11-7z"/>';
 	playIcon.innerHTML = playIconPath;
 
+	// Timer running state - toggle visibility of tags and title input
+	const isTimerActive = isPlaying || state.status === 'paused';
+	timerCard.classList.toggle('timer-running', isTimerActive);
+
+	// Title label visibility
+	if (state.sessionTitle && isTimerActive) {
+		titleLabel.textContent = state.sessionTitle;
+		titleLabel.style.display = 'block';
+	} else {
+		titleLabel.style.display = 'none';
+	}
+
 	// Session info
 	if (state.allComplete) {
 		sessionInfo.classList.add('complete');
@@ -620,13 +676,14 @@ function updateUI() {
 		sessionInfo.innerHTML = '✓ Session complete!';
 	} else {
 		sessionInfo.classList.remove('complete');
-		const phaseLabel = state.phase === 'focus' ? 'Focus' : 'Break';
-		if (isPlaying) {
+		const tagLabel = state.sessionTag || 'Focus';
+		if (isPlaying || state.status === 'paused') {
 			sessionInfo.classList.add('running');
-			sessionInfo.innerHTML = `<span class="phase-text ${state.phase}">${phaseLabel}</span> · Round ${state.currentRound}/${state.roundsPerSession}`;
+			const phaseTag = state.phase === 'focus' ? 'Focus' : 'Break';
+			sessionInfo.innerHTML = `${tagLabel} - <span class="phase-tag ${state.phase}">${phaseTag}</span> ${state.currentRound}/${state.roundsPerSession}`;
 		} else {
 			sessionInfo.classList.remove('running');
-			sessionInfo.textContent = `Round ${state.currentRound}/${state.roundsPerSession}`;
+			sessionInfo.textContent = `Rounds ${state.currentRound}/${state.roundsPerSession}`;
 		}
 	}
 
