@@ -121,6 +121,23 @@ body:has(.app.dark) .session-del { color: rgba(255,255,255,0.4); }
 
 .header { padding: 16px 26px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
 .logo { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.55); }
+.signature {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: rgba(0,0,0,0.32);
+  user-select: none;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+.signature::first-letter { font-weight: 500; }
+.app.dark .signature { color: rgba(255,255,255,0.35); }
 .header-actions { display: flex; gap: 10px; }
 .icon-btn {
 	width: 38px; height: 38px; border-radius: 50%;
@@ -339,7 +356,7 @@ body:has(.app.dark) .header-icon-btn:hover { background: rgba(255,94,114,0.28); 
 <div class="app" id="app">
 
 	<div class="header">
-		<div class="logo">🍅 Pomodoro</div>
+		<div class="logo">Pomodoro timer</div>
 		<div class="header-actions">
 			<button class="icon-btn" id="historyBtn" title="Session History">
 				<svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.97 8.97 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -391,6 +408,7 @@ body:has(.app.dark) .header-icon-btn:hover { background: rgba(255,94,114,0.28); 
 			</div>
 		</div>
 	</div>
+	<div class="signature">Designed by Laiqon</div>
 </div>
 
 <!-- Settings panel -->
