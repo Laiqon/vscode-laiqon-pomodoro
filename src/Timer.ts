@@ -27,6 +27,17 @@ export interface TimerStateExt {
 }
 
 /**
+ * Subset of the persisted configuration that drives the timer's behaviour.
+ */
+interface TimerConfig {
+	focusDuration: number;
+	breakDuration: number;
+	roundsPerSession: number;
+	autoStartBreaks: boolean;
+	autoStartFocus: boolean;
+}
+
+/**
  * Event callback types for timer lifecycle
  */
 type TickCallback = (state: TimerStateExt) => void;
@@ -40,7 +51,7 @@ type SessionCompleteCallback = () => void;
  */
 export class Timer {
 	private storage: Storage;
-	private config: { focusDuration: number; breakDuration: number; roundsPerSession: number; autoStartBreaks: boolean; autoStartFocus: boolean };
+	private config: TimerConfig;
 
 	// Timer state
 	private remainingSeconds: number = 0;
@@ -59,7 +70,7 @@ export class Timer {
 
 	constructor(storage: Storage) {
 		this.storage = storage;
-		this.config = this.loadConfig();
+		this.config = storage.getConfig();
 		this.resetToPhase('focus');
 	}
 
@@ -240,12 +251,9 @@ export class Timer {
 		}
 	}
 
-	private loadConfig(): { focusDuration: number; breakDuration: number; roundsPerSession: number; autoStartBreaks: boolean; autoStartFocus: boolean } {
-		return this.storage.getConfig();
-	}
-
+	/** Reloads the timer configuration from persisted settings. */
 	refreshConfig(): void {
-		this.config = this.loadConfig();
+		this.config = this.storage.getConfig();
 	}
 
 	applyConfigToRunningPhase(): void {

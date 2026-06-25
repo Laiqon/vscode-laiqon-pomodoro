@@ -22,6 +22,20 @@ export function activate(context: vscode.ExtensionContext): void {
 	registerCloseCommand(context);
 }
 
+// ==================== Helpers ====================
+
+/** Formats a duration in seconds as a zero-padded MM:SS string. */
+function formatTime(totalSeconds: number): string {
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/** Returns the human-readable label for a timer phase. */
+function phaseLabel(phase: Phase): string {
+	return phase === 'focus' ? 'Focus' : 'Break';
+}
+
 // ==================== Status Bar ====================
 
 function createStatusBar(): void {
@@ -30,10 +44,7 @@ function createStatusBar(): void {
 		100
 	);
 	const state = timer.getState();
-	const minutes = Math.floor(state.remainingSeconds / 60);
-	const seconds = state.remainingSeconds % 60;
-	const label = state.phase === 'focus' ? 'Focus' : 'Break';
-	statusBarItem.text = `${label}: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+	statusBarItem.text = `${phaseLabel(state.phase)}: ${formatTime(state.remainingSeconds)}`;
 	statusBarItem.tooltip = 'Laiqon Pomodoro';
 	statusBarItem.command = 'laiqon-pomodoro-focus.open';
 	statusBarItem.show();
@@ -65,23 +76,15 @@ function registerTimerEvents(): void {
 }
 
 function handleTick(state: { remainingSeconds: number; phase: Phase; allComplete?: boolean }): void {
-	const minutes = Math.floor(state.remainingSeconds / 60);
-	const seconds = state.remainingSeconds % 60;
-	const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-	if (state.allComplete) {
-		statusBarItem.text = 'Session completed!';
-	} else {
-		const label = state.phase === 'focus' ? 'Focus' : 'Break';
-		statusBarItem.text = `${label}: ${timeStr}`;
-	}
+	statusBarItem.text = state.allComplete
+		? 'Session completed!'
+		: `${phaseLabel(state.phase)}: ${formatTime(state.remainingSeconds)}`;
 
 	currentPanel?.webview.postMessage({ type: 'timerUpdate', state });
 }
 
 function handlePhaseChange(phase: Phase): void {
-	const label = phase === 'focus' ? 'Focus' : 'Break';
-	vscode.window.showInformationMessage(`🍅 ${label} started!`);
+	vscode.window.showInformationMessage(`🍅 ${phaseLabel(phase)} started!`);
 	currentPanel?.webview.postMessage({ type: 'phaseChange', phase });
 	if (storage.getConfig().enableSounds) {
 		currentPanel?.webview.postMessage({ type: 'playSound', sound: phase });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MGC Pomodoro</title>
+<title>Laiqon Pomodoro</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -105,8 +105,6 @@ body:has(.app.dark) .session-del { color: rgba(255,255,255,0.4); }
    carbon      - Near black (#1A1B1E) with green (#7cb518)
    amethyst    - Near black (#0D1117) with purple (#7A5AF8)
    ============================================================ */
-
-.blob { display: none; }
 
 .app::after {
   content: '';
@@ -218,17 +216,12 @@ body:has(.app.dark) .session-del { color: rgba(255,255,255,0.4); }
 	display: block;
 }
 
-.phase-badge { display: inline-block; padding: 7px 22px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; color: #fff; }
-.phase-badge.focus { background: linear-gradient(135deg,#ff7a8a,#ff5e72); }
-.phase-badge.break { background: linear-gradient(135deg,#5ad1c4,#3ec2b3); }
-
 .timer-display { font-size: 92px; font-weight: 800; letter-spacing: -4px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: #1d1d1f; }
 .timer-display.running { animation: subtlePulse 2s ease-in-out infinite; }
 @keyframes subtlePulse { 0%,100%{opacity:1;} 50%{opacity:0.8;} }
 @keyframes borderRing { 0%,100%{box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.7), inset 0 1px 0 rgba(255,255,255,0.4);} 50%{box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0), inset 0 1px 0 rgba(255,255,255,0.4);} }
 
 .session-info { font-size: 20px; color: rgba(0,0,0,0.5); margin-bottom: 26px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.session-info .phase-text { display: none; font-weight: 700; }
 .session-info .phase-tag { font-weight: 700; }
 .app.dark .session-info[data-activetag="work"],
 .session-info[data-activetag="work"],
@@ -245,7 +238,6 @@ body:has(.app.dark) .session-del { color: rgba(255,255,255,0.4); }
 .app.dark .session-info[data-activetag="fitness"],
 .session-info[data-activetag="fitness"],
 .session-info[data-activetag="fitness"] * { color: #7cb518; }
-.session-info.running .phase-text { display: inline; }
 .session-info.complete { color: #34c759; font-weight: 700; }
 
 .controls { display: flex; gap: 16px; justify-content: center; align-items: center; }
@@ -346,7 +338,6 @@ body:has(.app.dark) .header-icon-btn:hover { background: rgba(255,94,114,0.28); 
 	.session-title-input { padding: 9px 12px; font-size: 13px; border-radius: 11px; margin-bottom: 8px; }
 	.devops-input { padding: 8px 12px; font-size: 11px; border-radius: 11px; margin-bottom: 16px; }
 	.title-label { font-size: 16px; margin-bottom: 8px; }
-	.phase-badge { padding: 5px 16px; border-radius: 16px; font-size: 10px; margin-bottom: 12px; }
 }
 </style>
 </head>
@@ -471,9 +462,10 @@ body:has(.app.dark) .header-icon-btn:hover { background: rgba(255,94,114,0.28); 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
 const overlay = $('overlay');
+const playBtn = $('playBtn');
 const playIcon = $('playIcon');
+const settingsBtn = $('settingsBtn');
 const timerDisplay = $('timerDisplay');
-const phaseBadge = $('phaseBadge');
 const sessionInfo = $('sessionInfo');
 const sessionTitle = $('sessionTitle');
 const devopsTasks = $('devopsTasks');
@@ -488,6 +480,15 @@ let state = null;
 let config = null;
 let history = [];
 let isPlaying = false;
+
+// Cached render signatures so we only touch the DOM when the relevant
+// state actually changes (the timer ticks once per second).
+let renderedPlaying = null;
+let renderedInfoKey = null;
+
+// SVG markup for the play / pause button glyph.
+const PLAY_ICON = '<path d="M8 5v14l11-7z"/>';
+const PAUSE_ICON = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
 
 // Background themes that use light colors
 const lightBackgrounds = ['light'];
@@ -582,7 +583,7 @@ document.addEventListener('click', initAudioContext, { once: true });
 // ============================================================
 // Event Listeners - Timer Controls
 // ============================================================
-$('playBtn').addEventListener('click', () => {
+playBtn.addEventListener('click', () => {
 	vscodeApi.postMessage({ type: isPlaying ? 'pause' : 'start' });
 });
 
@@ -597,7 +598,7 @@ $('skipBtn').addEventListener('click', () => {
 // ============================================================
 // Event Listeners - Panel Controls
 // ============================================================
-$('settingsBtn').addEventListener('click', () => openSidePanel('configPanel'));
+settingsBtn.addEventListener('click', () => openSidePanel('configPanel'));
 
 $('historyBtn').addEventListener('click', () => {
 	vscodeApi.postMessage({ type: 'getHistory' });
@@ -623,12 +624,13 @@ function openSidePanel(panelId) {
 function closeSidePanels() {
 	const configPanel = $('configPanel');
 	if (configPanel.classList.contains('open')) {
-		const config = {
+		// Flush the duration inputs as a final config update when the panel closes.
+		const durationConfig = {
 			focusDuration: parseInt($('focusDuration').value),
 			breakDuration: parseInt($('breakDuration').value),
 			roundsPerSession: parseInt($('roundsPerSession').value)
 		};
-		vscodeApi.postMessage({ type: 'updateConfig', config });
+		vscodeApi.postMessage({ type: 'updateConfig', config: durationConfig });
 	}
 	document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
 	overlay.classList.remove('visible');
@@ -746,15 +748,6 @@ window.addEventListener('message', (event) => {
 			updateUI();
 			break;
 
-		case 'phaseChange':
-			setPhaseBadge(message.phase);
-			break;
-
-		case 'configUpdate':
-			config = message.config;
-			applyConfig();
-			break;
-
 		case 'history':
 			history = message.history || [];
 			renderHistory();
@@ -772,24 +765,25 @@ window.addEventListener('message', (event) => {
 function updateUI() {
 	if (!state) return;
 
-	// Timer display
+	// Timer display (changes every tick)
 	const minutes = Math.floor(state.remainingSeconds / 60);
 	const seconds = state.remainingSeconds % 60;
 	timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-	// Play/pause button state
 	isPlaying = state.status === 'running';
+	const isTimerActive = isPlaying || state.status === 'paused';
+
+	// Play/pause visual state - cheap idempotent class toggles every tick,
+	// but only rewrite the SVG glyph when the playing state actually flips.
 	timerDisplay.classList.toggle('running', isPlaying);
 	playBtn.classList.toggle('playing', isPlaying);
 	settingsBtn.style.display = isPlaying ? 'none' : '';
-
-	const playIconPath = isPlaying
-		? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-		: '<path d="M8 5v14l11-7z"/>';
-	playIcon.innerHTML = playIconPath;
+	if (isPlaying !== renderedPlaying) {
+		playIcon.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
+		renderedPlaying = isPlaying;
+	}
 
 	// Timer running state - toggle visibility of tags and title input
-	const isTimerActive = isPlaying || state.status === 'paused';
 	timerCard.classList.toggle('timer-running', isTimerActive);
 
 	// Title label visibility
@@ -800,24 +794,15 @@ function updateUI() {
 		titleLabel.style.display = 'none';
 	}
 
-	// Session info
-	if (state.allComplete) {
-		sessionInfo.classList.add('complete');
-		sessionInfo.classList.remove('running');
-		sessionInfo.innerHTML = '✓ Session complete!';
-	} else {
-		sessionInfo.classList.remove('complete');
-		const tagLabel = state.sessionTag || 'Focus';
-		if (isPlaying || state.status === 'paused') {
-			sessionInfo.classList.add('running');
-			const phaseTag = state.phase === 'focus' ? 'Focus' : 'Break';
-			sessionInfo.dataset.activetag = (state.sessionTag || 'work').toLowerCase();
-			sessionInfo.innerHTML = `${tagLabel} - <span class="phase-tag ${state.phase}">${phaseTag}</span> ${state.currentRound}/${state.roundsPerSession}`;
-		} else {
-			sessionInfo.classList.remove('running');
-			delete sessionInfo.dataset.activetag;
-			sessionInfo.textContent = `Rounds ${state.currentRound}/${state.roundsPerSession}`;
-		}
+	// Session info - rebuilt only when its content would change, not every second.
+	const infoKey = state.allComplete
+		? 'complete'
+		: isTimerActive
+			? `run|${state.sessionTag}|${state.phase}|${state.currentRound}|${state.roundsPerSession}`
+			: `idle|${state.currentRound}|${state.roundsPerSession}`;
+	if (infoKey !== renderedInfoKey) {
+		renderSessionInfo(isTimerActive);
+		renderedInfoKey = infoKey;
 	}
 
 	// Session title (only if not focused)
@@ -835,6 +820,30 @@ function updateUI() {
 		document.querySelectorAll('.tag').forEach(t => {
 			t.classList.toggle('active', t.dataset.tag === state.sessionTag);
 		});
+	}
+}
+
+/** Renders the round/phase indicator line below the timer. */
+function renderSessionInfo(isTimerActive) {
+	if (state.allComplete) {
+		sessionInfo.classList.add('complete');
+		sessionInfo.classList.remove('running');
+		delete sessionInfo.dataset.activetag;
+		sessionInfo.innerHTML = '✓ Session complete!';
+		return;
+	}
+
+	sessionInfo.classList.remove('complete');
+	if (isTimerActive) {
+		sessionInfo.classList.add('running');
+		const tagLabel = state.sessionTag || 'Focus';
+		const phaseTag = state.phase === 'focus' ? 'Focus' : 'Break';
+		sessionInfo.dataset.activetag = (state.sessionTag || 'work').toLowerCase();
+		sessionInfo.innerHTML = `${tagLabel} - <span class="phase-tag ${state.phase}">${phaseTag}</span> ${state.currentRound}/${state.roundsPerSession}`;
+	} else {
+		sessionInfo.classList.remove('running');
+		delete sessionInfo.dataset.activetag;
+		sessionInfo.textContent = `Rounds ${state.currentRound}/${state.roundsPerSession}`;
 	}
 }
 
