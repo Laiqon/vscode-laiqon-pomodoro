@@ -20,7 +20,16 @@ body {
  	background: transparent;
  	transition: color 0.3s ease;
  	image-rendering: -webkit-optimize-contrast;
+ 	--accent: #7b8cff;
+ 	--accent-2: #9a6cff;
+ 	--accent-rgb: 123,140,255;
  }
+.app.theme-winter   { --accent:#0D71FD; --accent-2:#3D8FFF; --accent-rgb:13,113,253; }
+.app.theme-midnight { --accent:#DC5C30; --accent-2:#FF7A4D; --accent-rgb:220,92,48; }
+.app.theme-light    { --accent:#7A5AF8; --accent-2:#9A7AFF; --accent-rgb:122,90,248; }
+.app.theme-graphite { --accent:#F7C359; --accent-2:#FFD980; --accent-rgb:247,195,89; }
+.app.theme-carbon   { --accent:#7cb518; --accent-2:#9ED13A; --accent-rgb:124,181,24; }
+.app.theme-amethyst { --accent:#7A5AF8; --accent-2:#9A7AFF; --accent-rgb:122,90,248; }
 .app:not(.transparent) {
  	backdrop-filter: blur(40px) saturate(160%);
  	-webkit-backdrop-filter: blur(40px) saturate(160%);
@@ -152,9 +161,9 @@ body {
 .timer-display { font-size: 92px; font-weight: 800; letter-spacing: -4px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: #1d1d1f; }
 .timer-display.running { animation: subtlePulse 2s ease-in-out infinite; }
 @keyframes subtlePulse { 0%,100%{opacity:1;} 50%{opacity:0.8;} }
-@keyframes borderRing { 0%,100%{box-shadow: 0 0 0 0 rgba(123,140,255,0.7), 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4);} 50%{box-shadow: 0 0 0 8px rgba(123,140,255,0), 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4);} }
+@keyframes borderRing { 0%,100%{box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.7), 0 10px 28px rgba(var(--accent-rgb), 0.5), inset 0 1px 0 rgba(255,255,255,0.4);} 50%{box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0), 0 10px 28px rgba(var(--accent-rgb), 0.5), inset 0 1px 0 rgba(255,255,255,0.4);} }
 
-.session-info { font-size: 14px; color: rgba(0,0,0,0.5); margin-bottom: 26px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.session-info { font-size: 18px; color: rgba(0,0,0,0.5); margin-bottom: 26px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .session-info .phase-text { display: none; font-weight: 700; }
 .session-info .phase-tag { font-weight: 700; }
 .session-info .phase-tag.break { color: #4ade80; }
@@ -168,8 +177,8 @@ body {
 .btn-secondary { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .btn-secondary:hover { background: rgba(255,255,255,0.9); transform: scale(1.06); }
 .btn-secondary svg { width: 22px; height: 22px; fill: rgba(0,0,0,0.6); }
-.play-btn { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg,#7b8cff,#9a6cff); box-shadow: 0 10px 28px rgba(123,140,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4); position: relative; }
-.play-btn:hover { transform: scale(1.07); box-shadow: 0 14px 34px rgba(123,140,255,0.6); }
+.play-btn { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 28px rgba(var(--accent-rgb), 0.5), inset 0 1px 0 rgba(255,255,255,0.4); position: relative; }
+.play-btn:hover { transform: scale(1.07); box-shadow: 0 14px 34px rgba(var(--accent-rgb), 0.6); }
 .play-btn.playing { animation: borderRing 1.5s ease-in-out infinite; }
 .play-btn svg { width: 30px; height: 30px; fill: #fff; }
 
@@ -242,7 +251,7 @@ body {
 	.app { min-width: 10vw; }
 	.timer-card { padding: 15px; border-radius: 20px; }
 	.timer-display { font-size: 46px; letter-spacing: -2px; }
-	.session-info { font-size: 12px; margin-bottom: 18px; }
+	.session-info { font-size: 14px; margin-bottom: 18px; }
 	.controls { gap: 12px; }
 	.btn-secondary { width: 34px; height: 34px; }
 	.btn-secondary svg { width: 16px; height: 16px; }
@@ -613,7 +622,9 @@ function applyBackground(bg) {
 
 	app.style.background = gradient;
 
-	app.classList.toggle('transparent', bg === 'transparent');
+app.classList.toggle('transparent', bg === 'transparent');
+	app.classList.remove('theme-winter','theme-midnight','theme-light','theme-graphite','theme-carbon','theme-amethyst');
+	if (bg && bg !== 'transparent') app.classList.add('theme-' + bg);
 
 	// Dark mode for dark backgrounds (all except light theme)
 	const isDark = !lightBackgrounds.includes(bg);
